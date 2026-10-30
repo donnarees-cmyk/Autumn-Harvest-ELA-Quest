@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autumn Harvest FAST ELA Quest - Grade 6</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        harvest: {
+                            bg: '#fdf8f0',
+                            card: '#ffffff',
+                            sidebar: '#fffaf0',
+                            accent: '#e65100', // Deep Harvest Orange
+                            gold: '#f59e0b',   // Autumn Amber
+                            green: '#65a30d',  // Leaf Green
+                            red: '#dc2626',    // Crimson Leaf
+                            dark: '#431407',   // Warm Bark Dark
+                            light: '#fef3c7'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        body: ['Open Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #fdf8f0;
+            color: #431407;
+            font-family: 'Open Sans', sans-serif;
+            background-image: radial-gradient(#fcd34d 1.5px, transparent 1.5px);
+            background-size: 28px 28px;
+        }
+        
+        .font-fredoka { font-family: 'Fredoka', sans-serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fef3c7;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e65100;
+        }
+
+        /* Highlight classes for passage selection */
+        .hl-yellow {
+            background-color: #fef08a !important;
+            border-bottom: 2px solid #eab308;
+            border-radius: 3px;
+            padding: 0 2px;
+        }
+        .hl-green {
+            background-color: #bbf7d0 !important;
+            border-bottom: 2px solid #22c55e;
+            border-radius: 3px;
+            padding: 0 2px;
+        }
+        .hl-pink {
+            background-color: #fbcfe8 !important;
+            border-bottom: 2px solid #ec4899;
+            border-radius: 3px;
+            padding: 0 2px;
+        }
+
+        /* Drag & Drop */
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+            transition: all 0.2s ease;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(1.04);
+        }
+        .drop-target-active {
+            border-color: #e65100 !important;
+            background-color: #fff7ed !important;
+            box-shadow: 0 0 12px rgba(230, 81, 0, 0.25);
+        }
+
+        /* Animations */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: floatSlow 4s ease-in-out infinite;
+        }
+
+        @media print {
+            header, footer, nav, button {
+                display: none !important;
+            }
+            #tab-results {
+                display: block !important;
+            }
+            body {
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-white border-b-2 border-harvest-gold/40 sticky top-0 z-50 px-4 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl animate-float">🍂</span>
+                <div>
+                    <h1 class="text-2xl font-bold text-harvest-accent font-fredoka tracking-wide flex items-center gap-2">
+                        Autumn Harvest ELA Quest
+                        <span class="text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-body">Grade 6 FAST</span>
+                    </h1>
+                    <p class="text-xs text-amber-800/80">Florida Standards Assessment Practice • Reading & Vocabulary</p>
+                </div>
+            </div>
+
+            <!-- Score Badge & Nav Buttons -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-50 px-4 py-1.5 rounded-full border-2 border-harvest-gold flex items-center space-x-2">
+                    <span class="text-xl">🍁</span>
+                    <span class="font-bold text-harvest-accent font-fredoka text-lg" id="token-score">0</span>
+                    <span class="text-xs text-amber-900 font-semibold">Tokens Earned</span>
+                </div>
+
+                <button onclick="switchTab('quest')" id="nav-quest-btn" class="px-4 py-2 rounded-xl bg-harvest-accent hover:bg-orange-700 text-white font-bold text-sm shadow transition flex items-center gap-1.5">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Passages & Questions
+                </button>
+                
+                <button onclick="switchTab('vocab')" id="nav-vocab-btn" class="px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-sm transition flex items-center gap-1.5">
+                    <i data-lucide="puzzle" class="w-4 h-4"></i> Vocab Match Game
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-grow">
+
+        <!-- TAB 1: PASSAGE & FAST QUESTIONS -->
+        <div id="tab-quest" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: DUAL PASSAGES (6 COLS) -->
+            <section class="lg:col-span-6 bg-white rounded-2xl border-2 border-amber-200 p-5 flex flex-col h-[780px] shadow-md relative">
+                
+                <!-- Passage Tab Header & Controls -->
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-100 pb-3 mb-3">
+                    <div class="flex space-x-2">
+                        <button id="p1-tab-btn" onclick="showPassage(1)" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-harvest-accent text-white transition">
+                            Text 1: Narrative
+                        </button>
+                        <button id="p2-tab-btn" onclick="showPassage(2)" class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 transition">
+                            Text 2: Informational
+                        </button>
+                    </div>
+
+                    <!-- Highlighter Colors -->
+                    <div class="flex items-center space-x-1 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 text-xs">
+                        <span class="text-amber-900 font-semibold mr-1">Highlight:</span>
+                        <button onclick="setHighlightColor('yellow')" id="hl-btn-yellow" class="w-5 h-5 rounded-full bg-yellow-300 border border-yellow-500 scale-110 shadow-sm"></button>
+                        <button onclick="setHighlightColor('green')" id="hl-btn-green" class="w-5 h-5 rounded-full bg-green-300 border border-green-500 hover:scale-105"></button>
+                        <button onclick="setHighlightColor('pink')" id="hl-btn-pink" class="w-5 h-5 rounded-full bg-pink-300 border border-pink-500 hover:scale-105"></button>
+                        <button onclick="clearPassageHighlights()" title="Clear Highlights" class="ml-1 text-gray-500 hover:text-red-600">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text-To-Speech Bar -->
+                <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2">
+                        <button id="tts-play-btn" onclick="toggleSpeech()" class="px-3 py-1 bg-harvest-accent hover:bg-orange-700 text-white rounded-lg text-xs font-bold flex items-center gap-1">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> Read Aloud
+                        </button>
+                        <button onclick="stopSpeech()" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-semibold">
+                            Stop
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-2 text-xs">
+                        <label for="tts-voice-select" class="text-amber-900 font-medium">Voice:</label>
+                        <select id="tts-voice-select" onchange="updateTTSVoice()" class="bg-white border border-amber-300 rounded px-2 py-1 text-xs text-amber-900 max-w-[150px] truncate">
+                            <option value="auto">Default Voice</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Scrollable Passage Container -->
+                <div id="passage-container" class="flex-grow overflow-y-auto pr-2 text-amber-950 leading-relaxed text-sm md:text-base space-y-4">
+                    
+                    <!-- Text 1: Narrative -->
+                    <article id="passage-1" class="space-y-3">
+                        <div class="bg-amber-50/80 p-3 rounded-xl border-l-4 border-harvest-accent">
+                            <h2 class="text-lg font-bold text-harvest-accent font-fredoka">Text 1: The Harvest Jubilee at Sun Gold Farm</h2>
+                            <p class="text-xs text-amber-800 italic">By Maya Lin • Realistic Fiction Narrative</p>
+                        </div>
+
+                        <p><span class="font-bold text-harvest-accent">[1]</span> Every October, Sun Gold Farm transformed into a bustling festival of autumn colors. Twelve-year-old Ethan pulled on his favorite wool sweater, crisp morning air greeting him as he stepped onto the porch. Today was the annual Harvest Jubilee, and for the first time, Ethan had been entrusted with managing the farm’s cider-pressing booth.</p>
+
+                        <p><span class="font-bold text-harvest-accent">[2]</span> Ethan walked past the pumpkin patch, where oversized, radiant orange squashes lay resting on golden straw. Nearby, giant banners flapped softly in the cool breeze, inviting visitors to apple-picking trails and corn maze adventures. "Remember, Ethan," his grandmother said warmly, handing him an apron. "The secret to Sun Gold cider isn't just the sweet Honeycrisp apples—it’s the care and pride we put into every single batch."</p>
+
+                        <p><span class="font-bold text-harvest-accent">[3]</span> As visitors flooded through the farm gates, Ethan worked tirelessly. He carefully sorted crisp red apples, operated the traditional wooden press, and poured steaming mugs of spiced hot cider for smiling guests. The rich aroma of cinnamon and fresh fruit filled the autumn air. When his friends invited him to take a break and ride the festival haywagon, Ethan looked back at the long line of happy families waiting at his booth. He politely declined with a cheerful smile, continuing his work with steady dedication.</p>
+
+                        <p><span class="font-bold text-harvest-accent">[4]</span> By sunset, the festival lights glowed brightly against the twilight sky. Ethan’s grandmother approached, taking in the spotless counter and empty apple crates. "You handled the entire jubilee with incredible responsibility, Ethan," she said proudly. Ethan grinned, feeling a deep sense of accomplishment that was far sweeter than any glass of cider.</p>
+                    </article>
+
+                    <!-- Text 2: Informational -->
+                    <article id="passage-2" class="space-y-3 hidden">
+                        <div class="bg-amber-50/80 p-3 rounded-xl border-l-4 border-harvest-gold">
+                            <h2 class="text-lg font-bold text-harvest-accent font-fredoka">Text 2: The Chemistry of Changing Leaves</h2>
+                            <p class="text-xs text-amber-800 italic">Informational Text • Botanical Science Digest</p>
+                        </div>
+
+                        <p><span class="font-bold text-harvest-gold">[1]</span> During the autumn season, temperate forests experience a dramatic visual transformation. Green canopy foliage dissolves into vivid displays of amber, gold, and vibrant crimson. While many people believe that chilly temperatures directly cause leaves to change color, the true biological trigger is the decreasing amount of daily sunlight as Earth shifts toward winter.</p>
+
+                        <p><span class="font-bold text-harvest-gold">[2]</span> In spring and summer, leaves act as miniature energy factories. They produce energy through photosynthesis, using a chemical called chlorophyll. Chlorophyll absorbs sunlight and gives leaves their bright green appearance. Because chlorophyll constantly breaks down under sunlight, plants continuously manufacture new supplies throughout the warm growing season.</p>
+
+                        <p><span class="font-bold text-harvest-gold">[3]</span> As daylight hours shorten in autumn, deciduous trees begin preparing for winter dormancy. The plant forms a protective layer of cells at the base of each leaf stem, blocking the flow of nutrients. Consequently, chlorophyll production slows down and eventually halts. As existing chlorophyll fades away, pigments called carotenoids—which were hidden all summer—become visible, revealing bright yellow and orange hues. Simultaneously, trapped sugars in some leaves produce anthocyanin pigments, creating brilliant red and purple leaves. Far from a random decay, leaf color changes represent a remarkably organized process designed to protect tree health.</p>
+                    </article>
+
+                </div>
+
+                <div class="mt-3 pt-2 border-t border-amber-100 flex justify-between items-center text-xs text-amber-800">
+                    <span>💡 Highlight text using your cursor to flag key evidence!</span>
+                    <span class="font-semibold" id="reading-status-tag">Text 1 Loaded</span>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: QUESTION ENGINE (6 COLS) -->
+            <section class="lg:col-span-6 flex flex-col justify-between space-y-4">
+                
+                <!-- Question Navigator Header -->
+                <div class="bg-white rounded-xl p-4 border-2 border-amber-200 flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-xs text-amber-800 font-bold uppercase tracking-wider">Standard Question Tracker</span>
+                        <div class="flex items-center space-x-1.5 mt-1.5" id="question-pills">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-amber-800 font-bold">Progress</span>
+                        <div class="w-28 bg-amber-100 h-2.5 rounded-full overflow-hidden border border-amber-300 mt-1">
+                            <div id="progress-bar" class="bg-harvest-accent h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Question Box -->
+                <div id="question-card" class="bg-white rounded-2xl border-2 border-amber-200 p-6 flex-grow flex flex-col justify-between shadow-md relative">
+                    <!-- Dynamic Question Content Injected via JS -->
+                </div>
+
+                <!-- Feedback Banner -->
+                <div id="feedback-card" class="hidden bg-amber-50 p-4 rounded-xl border-2 flex items-start space-x-3 transition duration-300">
+                    <span id="feedback-icon" class="text-2xl"></span>
+                    <div class="text-xs md:text-sm">
+                        <h4 id="feedback-title" class="font-bold font-fredoka text-base"></h4>
+                        <p id="feedback-text" class="text-amber-950 mt-1"></p>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- TAB 2: VOCABULARY MATCHING GAME -->
+        <div id="tab-vocab" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 border-2 border-amber-200 text-center shadow-sm">
+                <h2 class="text-3xl font-bold text-harvest-accent font-fredoka">Autumn Harvest Vocabulary Bushel Match</h2>
+                <p class="text-sm text-amber-800 mt-1">Drag each vocabulary word block on the left into the correct harvest bushel definition on the right!</p>
+            </div>
+
+            <!-- Drag & Drop Arena -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <!-- Draggable Words Deck (4 Cols) -->
+                <div class="md:col-span-4 bg-white p-5 rounded-2xl border-2 border-amber-200 shadow-sm">
+                    <h3 class="font-bold text-harvest-accent font-fredoka text-lg mb-3 flex items-center gap-2">
+                        <i data-lucide="wheat" class="w-5 h-5 text-harvest-gold"></i> Word Harvest Basket
+                    </h3>
+                    <p class="text-xs text-amber-800 mb-4">Click and drag these vocabulary words to their definitions:</p>
+                    <div id="words-container" class="space-y-3">
+                        <!-- Draggable words populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Bushel Drop Targets (8 Cols) -->
+                <div class="md:col-span-8 space-y-4" id="bushels-container">
+                    <!-- Target definition dropboxes populated by JS -->
+                </div>
+            </div>
+
+            <div class="text-center pt-2">
+                <button onclick="checkVocabMatches()" class="px-8 py-3 bg-harvest-green hover:bg-green-700 text-white font-bold font-fredoka text-lg rounded-xl shadow-md transform hover:scale-105 transition">
+                    🧺 Verify Matches
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 3: RESULTS & MASTERY CERTIFICATE -->
+        <div id="tab-results" class="hidden flex flex-col items-center justify-center py-6">
+            <div class="bg-white border-4 border-harvest-gold rounded-3xl p-8 max-w-2xl w-full text-center shadow-xl relative overflow-hidden">
+                <div class="text-5xl mb-2">🌾</div>
+                <h2 class="text-3xl font-bold text-harvest-accent font-fredoka tracking-wide">Autumn ELA Scholar Certificate</h2>
+                <p class="text-amber-800 text-sm mt-1">Florida FAST Grade 6 Standard Proficiency</p>
+
+                <div class="my-6 p-5 bg-amber-50 rounded-2xl border border-amber-200">
+                    <p class="text-xs text-amber-800 font-bold uppercase tracking-wider">STUDENT NAME</p>
+                    <input type="text" id="student-name-input" placeholder="Enter Your Name Here..." class="bg-transparent text-center font-bold text-2xl text-harvest-accent border-b-2 border-harvest-accent focus:outline-none my-2 w-3/4">
+                    <p class="text-xs text-amber-800 mt-2">Has demonstrated mastery on FAST Grade 6 Autumn Reading Unit with a score of:</p>
+                    <div class="text-5xl font-bold text-harvest-accent font-fredoka my-3" id="final-score-display">0 / 7</div>
+                    <p id="accuracy-percentage" class="text-sm font-semibold text-amber-900">0% Accuracy</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-left text-xs mb-6 bg-amber-50/50 p-4 rounded-xl border border-amber-200">
+                    <div>
+                        <span class="text-amber-900 font-bold">Benchmarked Standards:</span>
+                        <ul class="list-disc list-inside text-amber-800 mt-1 space-y-1">
+                            <li>ELA.6.R.1.1: Inference & Text Evidence</li>
+                            <li>ELA.6.R.1.2: Central Idea & Theme</li>
+                            <li>ELA.6.R.3.1: Figurative Language & Imagery</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="text-amber-900 font-bold">&nbsp;</span>
+                        <ul class="list-disc list-inside text-amber-800 mt-1 space-y-1">
+                            <li>ELA.6.R.2.1: Author Structure & Purpose</li>
+                            <li>ELA.6.R.3.3: Comparative Synthesis</li>
+                            <li>ELA.6.R.1.3: Point of View Analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button onclick="window.print()" class="px-5 py-2.5 bg-harvest-gold hover:bg-amber-600 text-white font-bold rounded-xl shadow transition flex items-center gap-2">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print Certificate
+                    </button>
+                    <button onclick="resetApp()" class="px-5 py-2.5 bg-harvest-accent hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-2">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restart Assessment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-amber-200 py-3 text-center text-xs text-amber-800">
+        <p>🍁 Grade 6 ELA Florida FAST Standards Practice • Autumn Harvest Classroom Unit 🌾</p>
+    </footer>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // --- 1. QUESTION BANK (FLORIDA FAST ALIGNED) ---
+        const questions = [
+            {
+                id: 1,
+                benchmark: "ELA.6.R.1.1 - Inference",
+                passageAssigned: 1,
+                title: "Question 1: Making Inferences",
+                prompt: "Based on Text 1, why does Ethan decline his friends' invitation to take a break and ride the festival haywagon?",
+                options: [
+                    "He is tired and wants to rest behind the cider counter.",
+                    "He is dedicated to his responsibility and takes pride in serving the festival guests.",
+                    "He is worried that his grandmother will be upset if he leaves his post.",
+                    "He does not enjoy haywagon rides or festival activities."
+                ],
+                correct: 1,
+                explanation: "Paragraph 3 explains that Ethan looked at the long line of happy families waiting at his booth and politely declined with a cheerful smile, continuing his work with steady dedication."
+            },
+            {
+                id: 2,
+                benchmark: "ELA.6.R.1.1 - Text Evidence",
+                passageAssigned: 1,
+                title: "Question 2: Citing Text Evidence",
+                prompt: "Which sentence from Text 1 BEST supports the inference that Ethan felt a strong personal reward for his hard work?",
+                options: [
+                    "\"Twelve-year-old Ethan pulled on his favorite wool sweater, crisp morning air greeting him...\" (Paragraph 1)",
+                    "\"He carefully sorted crisp red apples, operated the traditional wooden press...\" (Paragraph 3)",
+                    "\"Ethan grinned, feeling a deep sense of accomplishment that was far sweeter than any glass of cider.\" (Paragraph 4)",
+                    "\"Ethan walked past the pumpkin patch, where oversized, radiant orange squashes lay resting...\" (Paragraph 2)"
+                ],
+                correct: 2,
+                explanation: "Paragraph 4 explicitly describes Ethan's emotional reward: 'feeling a deep sense of accomplishment that was far sweeter than any glass of cider.'"
+            },
+            {
+                id: 3,
+                benchmark: "ELA.6.R.1.2 - Central Idea & Theme",
+                passageAssigned: 1,
+                title: "Question 3: Central Theme",
+                prompt: "Which statement expresses a central theme developed throughout Text 1?",
+                type: "single",
+                options: [
+                    "Taking pride in one's responsibilities leads to genuine personal satisfaction.",
+                    "Hard work is only valuable if it leads to public recognition and awards.",
+                    "Autumn festivals are the most important economic event for family farms.",
+                    "Traditional farming methods are always superior to modern technology."
+                ],
+                correct: 0,
+                explanation: "The narrative portrays Ethan dedicating himself to managing the cider booth responsibility and concluding with a deep feeling of personal fulfillment."
+            },
+            {
+                id: 4,
+                benchmark: "ELA.6.R.3.1 - Figurative Language",
+                passageAssigned: 2,
+                title: "Question 4: Vocabulary & Figurative Meaning",
+                prompt: "Read this sentence from Paragraph 2 of Text 2:<br/><i class='text-amber-900 font-semibold'>'In spring and summer, leaves act as miniature energy factories.'</i><br/>What does the author's metaphor suggest about leaves?",
+                options: [
+                    "Leaves are loud and produce industrial smoke during the warm season.",
+                    "Leaves actively and continuously convert raw materials into energy for the plant.",
+                    "Leaves are man-made structures built to harvest natural electricity.",
+                    "Leaves decay rapidly during the summer months."
+                ],
+                correct: 1,
+                explanation: "Comparing leaves to 'energy factories' is a metaphor illustrating how leaves systematically manufacture sugars through photosynthesis."
+            },
+            {
+                id: 5,
+                benchmark: "ELA.6.R.2.1 - Text Structure & Purpose",
+                passageAssigned: 2,
+                title: "Question 5: Author's Structure & Purpose",
+                prompt: "How does the author structure Text 2 to explain why autumn leaves change color?",
+                options: [
+                    "By presenting a timeline of historical discoveries about temperate forests.",
+                    "By comparing the autumn leaf colors in North America to those in Europe.",
+                    "By using cause-and-effect to show how reduced daylight leads to chemical changes in leaves.",
+                    "By offering personal anecdotes from visitors walking through autumn forests."
+                ],
+                correct: 2,
+                explanation: "Text 2 uses cause-and-effect structure: the decrease in daily sunlight (cause) triggers the breakdown of chlorophyll and reveals carotenoids and anthocyanins (effects)."
+            },
+            {
+                id: 6,
+                benchmark: "ELA.6.R.3.3 - Comparative Analysis",
+                passageAssigned: 2,
+                title: "Question 6: Paired Text Comparison",
+                prompt: "How do Text 1 and Text 2 differ in their approach to presenting the autumn season?",
+                options: [
+                    "Text 1 uses a narrative story to portray autumn through human tradition and emotion, while Text 2 uses informational science to explain biological natural processes.",
+                    "Text 1 focuses on scientific chemical equations, while Text 2 tells a story about a farm family.",
+                    "Text 1 argues against holding autumn festivals, while Text 2 encourages people to collect leaves.",
+                    "Both texts focus exclusively on how to make apple cider."
+                ],
+                correct: 0,
+                explanation: "Text 1 is realistic fiction emphasizing human tradition and responsibility, whereas Text 2 provides scientific exposition on botanical chemistry."
+            },
+            {
+                id: 7,
+                benchmark: "ELA.6.R.1.3 - Point of View",
+                passageAssigned: 1,
+                title: "Question 7: Point of View Analysis",
+                prompt: "Text 1 is written in the third-person limited point of view. How does this perspective affect the reader's understanding?",
+                options: [
+                    "It allows the reader to know the private thoughts and secret feelings of every festival visitor.",
+                    "It provides direct insight into Ethan’s personal emotions, actions, and sense of pride.",
+                    "It makes the story sound like an official scientific report about cider production.",
+                    "It forces the reader to act as the main character in the story."
+                ],
+                correct: 1,
+                explanation: "Third-person limited narrative focuses on the experience of one main character (Ethan), allowing readers to understand his internal thoughts, feelings, and dedication."
+            }
+        ];
+
+        // --- 2. VOCABULARY MATCHING DATA ---
+        const vocabItems = [
+            { id: "v1", word: "Deciduous", def: "Trees or shrubs that shed their leaves annually at the end of the growing season." },
+            { id: "v2", word: "Photosynthesis", def: "The process by which green plants use sunlight, water, and carbon dioxide to create energy." },
+            { id: "v3", word: "Bountiful", def: "Large in quantity; abundant and plentiful." },
+            { id: "v4", word: "Pigment", def: "A natural chemical substance that gives color to plant tissues and leaves." }
+        ];
+
+        // APP STATE
+        let currentQuestionIdx = 0;
+        let userAnswers = Array(questions.length).fill(null);
+        let currentHighlightColor = 'yellow';
+        let tokensEarned = 0;
+        let ttsSynth = window.speechSynthesis;
+        let ttsUtterance = null;
+        let voices = [];
+
+        // INITIALIZATION
+        window.onload = function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            renderQuestionPills();
+            loadQuestion(0);
+            initVocabGame();
+            initTTSVoices();
+        };
+
+        // NAVIGATION TABS
+        function switchTab(tabName) {
+            document.getElementById('tab-quest').classList.add('hidden');
+            document.getElementById('tab-vocab').classList.add('hidden');
+            document.getElementById('tab-results').classList.add('hidden');
+
+            document.getElementById('nav-quest-btn').className = "px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 font-bold text-sm transition flex items-center gap-1.5";
+            document.getElementById('nav-vocab-btn').className = "px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 font-bold text-sm transition flex items-center gap-1.5";
+
+            if (tabName === 'quest') {
+                document.getElementById('tab-quest').classList.remove('hidden');
+                document.getElementById('nav-quest-btn').className = "px-4 py-2 rounded-xl bg-harvest-accent hover:bg-orange-700 text-white font-bold text-sm shadow transition flex items-center gap-1.5";
+            } else if (tabName === 'vocab') {
+                document.getElementById('tab-vocab').classList.remove('hidden');
+                document.getElementById('nav-vocab-btn').className = "px-4 py-2 rounded-xl bg-harvest-accent hover:bg-orange-700 text-white font-bold text-sm shadow transition flex items-center gap-1.5";
+            } else if (tabName === 'results') {
+                document.getElementById('tab-results').classList.remove('hidden');
+                calculateFinalResults();
+            }
+        }
+
+        // SHOW DUAL PASSAGES
+        function showPassage(num) {
+            stopSpeech();
+            const p1 = document.getElementById('passage-1');
+            const p2 = document.getElementById('passage-2');
+            const btn1 = document.getElementById('p1-tab-btn');
+            const btn2 = document.getElementById('p2-tab-btn');
+            const statusTag = document.getElementById('reading-status-tag');
+
+            if (num === 1) {
+                p1.classList.remove('hidden');
+                p2.classList.add('hidden');
+                btn1.className = "px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-harvest-accent text-white transition";
+                btn2.className = "px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 transition";
+                statusTag.textContent = "Text 1 Loaded";
+            } else {
+                p2.classList.remove('hidden');
+                p1.classList.add('hidden');
+                btn2.className = "px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-harvest-accent text-white transition";
+                btn1.className = "px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 transition";
+                statusTag.textContent = "Text 2 Loaded";
+            }
+        }
+
+        // TEXT HIGHLIGHTER FEATURE
+        function setHighlightColor(color) {
+            currentHighlightColor = color;
+            document.getElementById('hl-btn-yellow').classList.remove('scale-110');
+            document.getElementById('hl-btn-green').classList.remove('scale-110');
+            document.getElementById('hl-btn-pink').classList.remove('scale-110');
+
+            document.getElementById(`hl-btn-${color}`).classList.add('scale-110');
+        }
+
+        document.getElementById('passage-container').addEventListener('mouseup', function() {
+            let selection = window.getSelection();
+            if (!selection.isCollapsed) {
+                let range = selection.getRangeAt(0);
+                let span = document.createElement('span');
+                span.className = `hl-${currentHighlightColor}`;
+                try {
+                    range.surroundContents(span);
+                } catch(e) {
+                    // Ignore complex cross-node selections
+                }
+            }
+        });
+
+        function clearPassageHighlights() {
+            const container = document.getElementById('passage-container');
+            const highlighted = container.querySelectorAll('.hl-yellow, .hl-green, .hl-pink');
+            highlighted.forEach(el => {
+                const parent = el.parentNode;
+                while (el.firstChild) parent.insertBefore(el.firstChild, el);
+                parent.removeChild(el);
+            });
+        }
+
+        // SPEECH SYNTHESIS ENGINE
+        function initTTSVoices() {
+            if ('speechSynthesis' in window) {
+                const updateVoices = function() {
+                    voices = window.speechSynthesis.getVoices();
+                    const select = document.getElementById('tts-voice-select');
+                    select.innerHTML = '';
+                    
+                    let googleVoices = voices.filter(v => v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Neural'));
+                    let listToUse = googleVoices.length > 0 ? googleVoices : voices;
+
+                    listToUse.forEach((v) => {
+                        let opt = document.createElement('option');
+                        opt.value = v.name;
+                        opt.textContent = `${v.name} (${v.lang})`;
+                        select.appendChild(opt);
+                    });
+                };
+
+                updateVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = updateVoices;
+                }
+            }
+        }
+
+        function toggleSpeech() {
+            if (ttsSynth && ttsSynth.speaking) {
+                stopSpeech();
+                return;
+            }
+
+            const activePassage = document.getElementById('passage-1').classList.contains('hidden') ? 
+                document.getElementById('passage-2') : document.getElementById('passage-1');
+            
+            let textToRead = activePassage.innerText.replace(/\[\d+\]/g, ''); // strip paragraph numbers
+            
+            ttsUtterance = new SpeechSynthesisUtterance(textToRead);
+            ttsUtterance.rate = 0.92;
+            ttsUtterance.pitch = 1.0;
+
+            const selectedVoiceName = document.getElementById('tts-voice-select').value;
+            if (selectedVoiceName !== 'auto') {
+                let foundVoice = voices.find(v => v.name === selectedVoiceName);
+                if (foundVoice) ttsUtterance.voice = foundVoice;
+            }
+
+            ttsSynth.speak(ttsUtterance);
+        }
+
+        function stopSpeech() {
+            if (ttsSynth) ttsSynth.cancel();
+        }
+
+        function updateTTSVoice() {
+            if (ttsSynth && ttsSynth.speaking) {
+                stopSpeech();
+                toggleSpeech();
+            }
+        }
+
+        // QUESTION RENDERER & PROGRESS TRACKER
+        function renderQuestionPills() {
+            const container = document.getElementById('question-pills');
+            container.innerHTML = '';
+            questions.forEach((q, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `w-7 h-7 rounded-full text-xs font-bold font-fredoka flex items-center justify-center border transition ${
+                    idx === currentQuestionIdx 
+                        ? 'bg-harvest-accent text-white border-harvest-accent scale-110 shadow' 
+                        : userAnswers[idx] !== null 
+                            ? 'bg-amber-200 text-amber-900 border-amber-400' 
+                            : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                }`;
+                btn.textContent = idx + 1;
+                btn.onclick = () => loadQuestion(idx);
+                container.appendChild(btn);
+            });
+
+            // Progress bar
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            const pct = (answeredCount / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+        }
+
+        function loadQuestion(idx) {
+            currentQuestionIdx = idx;
+            renderQuestionPills();
+
+            const q = questions[idx];
+            showPassage(q.passageAssigned);
+
+            const card = document.getElementById('question-card');
+            const isAnswered = userAnswers[idx] !== null;
+
+            let html = `
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-1 rounded-md border border-amber-300">
+                            ${q.benchmark}
+                        </span>
+                        <span class="text-xs text-amber-800 font-semibold">Question ${idx + 1} of ${questions.length}</span>
+                    </div>
+
+                    <h3 class="text-lg font-bold text-harvest-accent font-fredoka mt-2">${q.title}</h3>
+                    <div class="text-sm text-amber-950 font-medium my-3 leading-relaxed">${q.prompt}</div>
+
+                    <div class="space-y-2.5 mt-4">
+            `;
+
+            q.options.forEach((opt, optIdx) => {
+                let borderClass = "border-amber-200 hover:border-harvest-accent hover:bg-amber-50";
+                let bgClass = "bg-white";
+
+                if (isAnswered) {
+                    if (optIdx === q.correct) {
+                        borderClass = "border-green-500 bg-green-50 font-semibold";
+                    } else if (userAnswers[idx] === optIdx) {
+                        borderClass = "border-red-400 bg-red-50";
+                    }
+                }
+
+                html += `
+                    <button onclick="selectOption(${optIdx})" ${isAnswered ? 'disabled' : ''} class="w-full text-left p-3 rounded-xl border-2 ${borderClass} ${bgClass} text-xs md:text-sm text-amber-950 transition flex items-start space-x-2.5">
+                        <span class="font-bold text-harvest-accent text-sm min-w-[20px]">${String.fromCharCode(65 + optIdx)}.</span>
+                        <span class="flex-grow">${opt}</span>
+                    </button>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-6 pt-3 border-t border-amber-100">
+                    <button onclick="navigateQuestion(-1)" ${idx === 0 ? 'disabled class="opacity-40 text-xs px-3 py-1.5 rounded-lg border border-amber-300"' : 'class="text-xs px-3 py-1.5 rounded-lg border border-amber-300 text-amber-900 font-bold hover:bg-amber-100"'} >
+                        ← Previous
+                    </button>
+                    ${idx < questions.length - 1 ? 
+                        `<button onclick="navigateQuestion(1)" class="text-xs px-4 py-1.5 rounded-lg bg-harvest-accent text-white font-bold hover:bg-orange-700">Next Question →</button>` :
+                        `<button onclick="switchTab('results')" class="text-xs px-4 py-1.5 rounded-lg bg-harvest-green text-white font-bold hover:bg-green-700">View Summary Results 🎉</button>`
+                    }
+                </div>
+            `;
+
+            card.innerHTML = html;
+
+            // Display Feedback if answered
+            const feedbackCard = document.getElementById('feedback-card');
+            if (isAnswered) {
+                const isCorrect = userAnswers[idx] === q.correct;
+                feedbackCard.classList.remove('hidden');
+                feedbackCard.className = `p-4 rounded-xl border-2 flex items-start space-x-3 ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'}`;
+                document.getElementById('feedback-icon').textContent = isCorrect ? "🌟" : "💡";
+                document.getElementById('feedback-title').textContent = isCorrect ? "Correct! Standard Mastered!" : "FAST Strategy Explanation:";
+                document.getElementById('feedback-title').className = `font-bold font-fredoka text-base ${isCorrect ? 'text-green-800' : 'text-amber-900'}`;
+                document.getElementById('feedback-text').textContent = q.explanation;
+            } else {
+                feedbackCard.classList.add('hidden');
+            }
+        }
+
+        function selectOption(optIdx) {
+            if (userAnswers[currentQuestionIdx] !== null) return;
+
+            userAnswers[currentQuestionIdx] = optIdx;
+            const q = questions[currentQuestionIdx];
+
+            if (optIdx === q.correct) {
+                tokensEarned += 10;
+                document.getElementById('token-score').textContent = tokensEarned;
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
+                }
+            }
+
+            loadQuestion(currentQuestionIdx);
+        }
+
+        function navigateQuestion(direction) {
+            let target = currentQuestionIdx + direction;
+            if (target >= 0 && target < questions.length) {
+                loadQuestion(target);
+            }
+        }
+
+        // --- 3. DRAG & DROP VOCABULARY GAME LOGIC ---
+        function initVocabGame() {
+            const wordsDeck = document.getElementById('words-container');
+            const bushelsContainer = document.getElementById('bushels-container');
+
+            if (!wordsDeck || !bushelsContainer) return;
+
+            wordsDeck.innerHTML = '';
+            bushelsContainer.innerHTML = '';
+
+            // Shuffle words
+            let shuffledWords = [...vocabItems].sort(() => Math.random() - 0.5);
+
+            shuffledWords.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "draggable-item bg-amber-50 border-2 border-harvest-gold p-3 rounded-xl font-bold font-fredoka text-amber-900 shadow-sm flex items-center justify-between";
+                div.draggable = true;
+                div.id = `drag-${item.id}`;
+                div.dataset.id = item.id;
+                div.innerHTML = `<span>🧺 ${item.word}</span> <i data-lucide="grip-vertical" class="w-4 h-4 text-amber-700"></i>`;
+
+                div.addEventListener('dragstart', handleDragStart);
+                wordsDeck.appendChild(div);
+            });
+
+            // Bushel Targets
+            vocabItems.forEach((item, idx) => {
+                const target = document.createElement('div');
+                target.className = "drop-target bg-white border-2 border-dashed border-amber-300 p-4 rounded-2xl transition flex flex-col justify-between shadow-sm min-h-[100px]";
+                target.dataset.id = item.id;
+
+                target.innerHTML = `
+                    <p class="text-xs md:text-sm text-amber-950 font-medium leading-relaxed">
+                        <strong class="text-harvest-accent font-fredoka">Bushel ${idx + 1}:</strong> "${item.def}"
+                    </p>
+                    <div class="drop-slot border border-amber-200 bg-amber-50/50 rounded-xl p-2 mt-2 text-center text-xs text-amber-700 italic min-h-[42px] flex items-center justify-center">
+                        Drop matching word here
+                    </div>
+                `;
+
+                target.addEventListener('dragover', handleDragOver);
+                target.addEventListener('dragleave', handleDragLeave);
+                target.addEventListener('drop', handleDrop);
+                bushelsContainer.appendChild(target);
+            });
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        let draggedElementId = null;
+
+        function handleDragStart(e) {
+            draggedElementId = this.dataset.id;
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            this.classList.add('drop-target-active');
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('drop-target-active');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drop-target-active');
+            const wordId = e.dataTransfer.getData('text/plain');
+            const draggedNode = document.getElementById(`drag-${wordId}`);
+
+            if (draggedNode) {
+                const slot = this.querySelector('.drop-slot');
+                slot.innerHTML = '';
+                slot.appendChild(draggedNode);
+                slot.classList.remove('italic', 'text-amber-700');
+            }
+        }
+
+        function checkVocabMatches() {
+            let correctCount = 0;
+            const targets = document.querySelectorAll('.drop-target');
+
+            targets.forEach(target => {
+                const targetId = target.dataset.id;
+                const slotted = target.querySelector('.draggable-item');
+
+                if (slotted && slotted.dataset.id === targetId) {
+                    correctCount++;
+                    target.className = "drop-target bg-green-50 border-2 border-green-400 p-4 rounded-2xl transition flex flex-col justify-between shadow-sm min-h-[100px]";
+                } else if (slotted) {
+                    target.className = "drop-target bg-red-50 border-2 border-red-300 p-4 rounded-2xl transition flex flex-col justify-between shadow-sm min-h-[100px]";
+                }
+            });
+
+            if (correctCount === vocabItems.length) {
+                tokensEarned += 20;
+                document.getElementById('token-score').textContent = tokensEarned;
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+                }
+            }
+        }
+
+        // --- 4. SUMMARY & CERTIFICATE LOGIC ---
+        function calculateFinalResults() {
+            let correctNum = 0;
+            questions.forEach((q, idx) => {
+                if (userAnswers[idx] === q.correct) correctNum++;
+            });
+
+            document.getElementById('final-score-display').textContent = `${correctNum} / ${questions.length}`;
+            let pct = Math.round((correctNum / questions.length) * 100);
+            document.getElementById('accuracy-percentage').textContent = `${pct}% Proficiency Rate`;
+        }
+
+        function resetApp() {
+            userAnswers = Array(questions.length).fill(null);
+            tokensEarned = 0;
+            document.getElementById('token-score').textContent = "0";
+            currentQuestionIdx = 0;
+            switchTab('quest');
+            loadQuestion(0);
+            initVocabGame();
+        }
+    </script>
+</body>
+</html>
